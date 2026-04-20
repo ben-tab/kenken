@@ -14,6 +14,7 @@ int main() {
 	}
 	
 	start_color();
+	init_graphics();
 	noecho();
 	cbreak();
 	keypad(stdscr, TRUE);

@@ -13,78 +13,99 @@ int get_color(Operation op) {
     }
 }
 
-void render(GameState* game, Cursor* cursor) {
-	clear();
-
+void init_graphics() {
+	// Init color pairs
+	init_color(COLOR_MAGENTA, 500, 500, 500);
 	init_pair(1, COLOR_GREEN, COLOR_BLACK); // ADD
 	init_pair(2, COLOR_RED, COLOR_BLACK); // SUB
 	init_pair(3, COLOR_BLUE, COLOR_BLACK); // MUL
 	init_pair(4, COLOR_YELLOW, COLOR_BLACK); // DIV
 	init_pair(5, COLOR_WHITE, COLOR_BLACK); // EQL
+	init_pair(6, COLOR_BLACK, COLOR_WHITE); // Highlight selected
+	init_pair(7, COLOR_BLACK, COLOR_MAGENTA); // Highlight grid
+}
 
-	int term_rows, term_cols;
-	getmaxyx(stdscr, term_rows, term_cols);
-	int board_h = SIZE * CELL_H;
-	int board_w = SIZE * CELL_W;
-	int offset_y = (term_rows - board_h) / 4;
-	int offset_x = (term_rows - board_w) / 2;
+void render_board(GameState* game, Cursor* cursor, int bh, int bw, int boy, int box) {
+	// Draw game box
+	WINDOW* board = newwin(bh, bw, boy, box);
 
-	// draw outer box around the whole board
-    for (int r = offset_y - 1; r <= offset_y + board_h; r++) {
-        mvaddch(r, offset_x - 1,          ACS_VLINE);
-        mvaddch(r, offset_x + board_w,    ACS_VLINE);
-    }
-    for (int c = offset_x - 1; c <= offset_x + board_w; c++) {
-        mvaddch(offset_y - 1,         c,  ACS_HLINE);
-        mvaddch(offset_y + board_h,   c,  ACS_HLINE);
-    }
-    // corners
-    mvaddch(offset_y - 1,       offset_x - 1,       ACS_ULCORNER);
-    mvaddch(offset_y - 1,       offset_x + board_w, ACS_URCORNER);
-    mvaddch(offset_y + board_h, offset_x - 1,       ACS_LLCORNER);
-    mvaddch(offset_y + board_h, offset_x + board_w, ACS_LRCORNER);
-
-    // add just before the cell drawing loop
-   	mvprintw(offset_y - 3, offset_x + board_w / 2 - 3, "KENKEN");
+	box(board, 0, 0);
 
 	for (int i=0; i<SIZE; i++) {
 		for (int j=0; j<SIZE; j++) {
 			Cage* cage = game->cells[i][j].cage;
 			int color = get_color(cage->op);
-			
-			int screen_y = offset_y+i*CELL_H;
-			int screen_x = offset_x+j*CELL_W;
+
+			int screen_y = (i*2);
+			int screen_x = (j*4)+1;
 
 			// Highlight selected cell
-			if (cursor->row == i && cursor->col == j) attron(A_REVERSE);
-
-			attron(COLOR_PAIR(color));
-
-			// Top-left cell of cage shows target+op
-            bool is_label = (cage->coords[0][0] == i && cage->coords[0][1] == j);
-            if (is_label) {
-                mvprintw(screen_y, screen_x, "%d%c   ", cage->target, (char)cage->op);
-            } else {
-                mvprintw(screen_y, screen_x, "      ");
-			}
-			
-            // middle row shows the player's value
-            int val = game->grid[i][j];
-            if (val == 0) {
-                mvprintw(screen_y + 1, screen_x, "  .   ");
-            } else {
-                mvprintw(screen_y + 1, screen_x, "  %d   ", val);
+			int pair;
+			if (cursor->row == i && cursor->col == j) {
+				pair = 6;
+			} else if (cage->cage_id == game->cells[cursor->row][cursor->col].cage->cage_id) {
+				pair = 7;	
+			} else {
+				pair = color;
 			}
 
-            // bottom row empty (spacing)
-            mvprintw(screen_y + 2, screen_x, "      ");
+			wattron(board, COLOR_PAIR(pair));
+
+			int val = game->grid[i][j];
+			if (val != 0) {
+				mvwprintw(board, screen_y+1, screen_x+1, "%d", val);
+			} else {
+				mvwprintw(board, screen_y+1, screen_x+1, " ");
+			}
+			wattroff(board, COLOR_PAIR(pair));
 			
-			attroff(COLOR_PAIR(color));
-			attroff(A_REVERSE);
 		}
 	}
 
-	refresh();
+	wrefresh(board);
+	delwin(board);
+}
+
+void render_info(GameState* game, Cursor* cursor, int ih, int iw, int ioy, int iox) {
+	Cell* cell = &game->cells[cursor->row][cursor->col];
+	Cage* cage = cell->cage;
+
+	WINDOW* info = newwin(ih, iw, ioy, iox);
+
+	box(info, 0, 0);
+
+	// Panel content
+    attron(COLOR_PAIR(5));
+    mvprintw(ioy + 1, iox+1, "Pos:    [%d, %d]", cursor->row, cursor->col);
+    mvprintw(ioy + 2, iox+1, "Value:  %d", game->grid[cursor->row][cursor->col]);
+    mvprintw(ioy + 3, iox+1, "Cage:   #%d", cage->cage_id);
+    mvprintw(ioy + 4, iox+1, "Op:     %c", (char)cage->op);
+    mvprintw(ioy + 5, iox+1, "Target: %d", cage->target);
+    mvprintw(ioy + 6, iox+1, "Size:   %d", cage->size);
+    attroff(COLOR_PAIR(5));
+
+    wrefresh(info);
+    delwin(info);
+}
+
+void render(GameState* game, Cursor* cursor) {
+	// Get sizes;
+	int term_rows, term_cols;
+	getmaxyx(stdscr, term_rows, term_cols);
+	
+	int board_h = 2*(SIZE)+1;
+	int board_w = 4*(SIZE)+1;
+	int board_offset_y = (term_rows - board_h)/4;
+	int board_offset_x = (term_rows - board_w) / 2;
+
+	int info_h = board_h;
+	int info_w = 20;
+	int info_offset_y = board_offset_y;
+	int info_offset_x = board_offset_x + board_w + 4;
+
+
+	render_board(game, cursor, board_h, board_w, board_offset_y, board_offset_x);
+	render_info(game, cursor, info_h, info_w, info_offset_y, info_offset_x);
 }
 
 void render_win_screen(GameState* game) {
@@ -105,8 +126,8 @@ void render_win_screen(GameState* game) {
     attroff(COLOR_PAIR(1) | A_BOLD);
 
     attron(COLOR_PAIR(5));
-    mvprintw(mid_y,     mid_x - 10, "Solved in %02d:%02d", mins, secs);
-    mvprintw(mid_y + 2, mid_x - 11, "R to play again, Q to quit");
+    mvprintw(mid_y, mid_x-10, "Solved in %02d:%02d", mins, secs);
+    mvprintw(mid_y+2, mid_x-11, "R to play again, Q to quit");
     attroff(COLOR_PAIR(5));
 
     refresh();

@@ -11,6 +11,7 @@ typedef struct {
 	int col;
 } Cursor;
 
+void init_graphics();
 void render(GameState* game, Cursor* cursor);
 void render_win_screen(GameState* game);
 void handle_input(GameState* game, Cursor* cursor, int ch);
