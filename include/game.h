@@ -7,9 +7,6 @@
 #define MAX_CAGES 16
 #define MAX_CELLS 6 // Max cells per cage
 
-#define CELL_W 6
-#define CELL_H 3
-
 typedef enum {
 	ADD = '+',
 	SUB = '-',

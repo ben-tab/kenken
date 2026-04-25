@@ -19,12 +19,14 @@ int main() {
 	cbreak();
 	keypad(stdscr, TRUE);
 	curs_set(0);
-
+	
 	GameState game;
 	Cursor cursor = {0, 0};
-	
+
+	// Load prebuilt 4x4 puzzle (change later when generating puzzles)
 	load_puzzle(&game);
 
+	// Game loop
 	int ch;
 	while ((ch = getch()) != 'q') {
 		if (check_win(&game)) {

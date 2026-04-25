@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include "../include/render.h"
 
+/*
+	Get color based on cage operation
+*/
 int get_color(Operation op) {
     switch (op) {
         case ADD: return 1;
@@ -13,6 +16,9 @@ int get_color(Operation op) {
     }
 }
 
+/*
+	Initialize color pairs	
+*/
 void init_graphics() {
 	// Init color pairs
 	init_color(COLOR_MAGENTA, 500, 500, 500);
@@ -25,9 +31,13 @@ void init_graphics() {
 	init_pair(7, COLOR_BLACK, COLOR_MAGENTA); // Highlight grid
 }
 
+/*
+	Render board
+*/
 void render_board(GameState* game, Cursor* cursor, int bh, int bw, int boy, int box) {
 	// Draw game box
 	WINDOW* board = newwin(bh, bw, boy, box);
+	werase(board);
 
 	box(board, 0, 0);
 
@@ -35,9 +45,8 @@ void render_board(GameState* game, Cursor* cursor, int bh, int bw, int boy, int 
 		for (int j=0; j<SIZE; j++) {
 			Cage* cage = game->cells[i][j].cage;
 			int color = get_color(cage->op);
-
-			int screen_y = (i*2);
-			int screen_x = (j*4)+1;
+			int screen_y = (i*CELL_H)+1; // +1 for box border
+			int screen_x = (j*CELL_W)+1;
 
 			// Highlight selected cell
 			int pair;
@@ -49,13 +58,28 @@ void render_board(GameState* game, Cursor* cursor, int bh, int bw, int boy, int 
 				pair = color;
 			}
 
-			wattron(board, COLOR_PAIR(pair));
+			//Fill all 3 rows of cell with the color
+			for (int dy=0; dy<CELL_H; dy++) {
+				for (int dx=0; dx<CELL_W; dx++) {
+					mvwaddch(board, screen_y+dy, screen_x+dx, ' ' | COLOR_PAIR(pair));
+				}
+			}
 
+			// Cage label in top left cell of cage
+			bool is_label = (cage->coords[0][0] == i && cage->coords[0][1] == j);
+			if (is_label) {
+				wattron(board, COLOR_PAIR(pair) | A_BOLD);
+				mvwprintw(board, screen_y, screen_x, "%d%c", cage->target, (char)cage->op);
+				wattroff(board, COLOR_PAIR(pair) | A_BOLD);
+			}
+
+			// Player value
 			int val = game->grid[i][j];
+			wattron(board, COLOR_PAIR(pair));
 			if (val != 0) {
-				mvwprintw(board, screen_y+1, screen_x+1, "%d", val);
+				mvwprintw(board, screen_y+CELL_H/2, screen_x+CELL_W/2, "%d", val);
 			} else {
-				mvwprintw(board, screen_y+1, screen_x+1, " ");
+				mvwprintw(board, screen_y+CELL_H/2, screen_x+CELL_W/2, " ");
 			}
 			wattroff(board, COLOR_PAIR(pair));
 			
@@ -66,48 +90,28 @@ void render_board(GameState* game, Cursor* cursor, int bh, int bw, int boy, int 
 	delwin(board);
 }
 
-void render_info(GameState* game, Cursor* cursor, int ih, int iw, int ioy, int iox) {
-	Cell* cell = &game->cells[cursor->row][cursor->col];
-	Cage* cage = cell->cage;
-
-	WINDOW* info = newwin(ih, iw, ioy, iox);
-
-	box(info, 0, 0);
-
-	// Panel content
-    attron(COLOR_PAIR(5));
-    mvprintw(ioy + 1, iox+1, "Pos:    [%d, %d]", cursor->row, cursor->col);
-    mvprintw(ioy + 2, iox+1, "Value:  %d", game->grid[cursor->row][cursor->col]);
-    mvprintw(ioy + 3, iox+1, "Cage:   #%d", cage->cage_id);
-    mvprintw(ioy + 4, iox+1, "Op:     %c", (char)cage->op);
-    mvprintw(ioy + 5, iox+1, "Target: %d", cage->target);
-    mvprintw(ioy + 6, iox+1, "Size:   %d", cage->size);
-    attroff(COLOR_PAIR(5));
-
-    wrefresh(info);
-    delwin(info);
-}
-
+/*
+	Main render function that calls other render functions
+*/
 void render(GameState* game, Cursor* cursor) {
 	// Get sizes;
 	int term_rows, term_cols;
 	getmaxyx(stdscr, term_rows, term_cols);
+	// Get rid of annoying set but not used compiler warning
+	(void)term_rows;
+	(void)term_cols;
 	
-	int board_h = 2*(SIZE)+1;
-	int board_w = 4*(SIZE)+1;
-	int board_offset_y = (term_rows - board_h)/4;
-	int board_offset_x = (term_rows - board_w) / 2;
-
-	int info_h = board_h;
-	int info_w = 20;
-	int info_offset_y = board_offset_y;
-	int info_offset_x = board_offset_x + board_w + 4;
-
-
+	int board_h = CELL_H*(SIZE)+2;
+	int board_w = CELL_W*(SIZE)+2;
+	int board_offset_y = (term_rows - board_h)/2;
+	int board_offset_x = (term_rows - board_w)/2;
+	
 	render_board(game, cursor, board_h, board_w, board_offset_y, board_offset_x);
-	render_info(game, cursor, info_h, info_w, info_offset_y, info_offset_x);
 }
 
+/*
+	Win screen that shows time
+*/
 void render_win_screen(GameState* game) {
     clear();
 
@@ -133,6 +137,9 @@ void render_win_screen(GameState* game) {
     refresh();
 }
 
+/*
+	Input handling
+*/
 void handle_input(GameState* game, Cursor* cursor, int ch) {
 	switch (ch) {
 		// Movement
