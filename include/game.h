@@ -3,10 +3,11 @@
 #include <time.h>
 #include <stdbool.h>
 
-#define SIZE 4
-#define MAX_CAGES 16
+#define MAX_SIZE 9
+#define MAX_CAGES 16 // Max amount of cages
 #define MAX_CELLS 6 // Max cells per cage
 
+// Enum of all operations
 typedef enum {
 	ADD = '+',
 	SUB = '-',
@@ -25,7 +26,7 @@ typedef struct {
 } Cell;
 
 struct Cage {
-	int coords[MAX_CELLS][2];
+	int coords[MAX_CELLS][2]; // Coordinate of cell in cage (y, x) ex: ({2, 2}, {2, 3}, {1, 3})
 	int size;
 	Operation op;
 	int target;
@@ -34,12 +35,13 @@ struct Cage {
 
 
 typedef struct {
-	int grid[SIZE][SIZE]; // Current player input
-	int solution[SIZE][SIZE]; // Solved grid
-	Cell cells[SIZE][SIZE]; // Cell metadata
+	int grid[MAX_SIZE][MAX_SIZE]; // Current player input
+	int solution[MAX_SIZE][MAX_SIZE]; // Solved grid
+	Cell cells[MAX_SIZE][MAX_SIZE]; // Cell metadata
 	Cage cages[MAX_CAGES];
 	int cage_count;
 	time_t start_time;
+	int size;
 } GameState;
 
 bool check_win(GameState* game);

@@ -9,6 +9,28 @@
 #define CELL_W 7
 #define CELL_H 3
 
+// Sections in menu
+typedef enum {
+    MENU_DIFFICULTY,
+    MENU_SIZE,
+    MENU_PLAY,
+    MENU_SECTION_COUNT
+} MenuSection;
+
+// Difficulty
+typedef enum {
+    DIFF_EASY,
+    DIFF_MEDIUM,
+    DIFF_HARD,
+    DIFF_COUNT
+} Difficulty;
+
+// Track current state of menu
+typedef struct {
+	MenuSection section;  // Section that is focused
+	Difficulty diff; // Selected difficulty
+	int size;
+} MenuState;
 
 // Track players current selected cell on the grid (0, 0) is top left cell in grid
 typedef struct {
@@ -53,6 +75,8 @@ void render_board(GameState* game, Cursor* cursor, int bh, int bw, int boy, int 
  * cursor: pointer to the player's current cursor position */
 void render(GameState* game, Cursor* cursor);
 
+int render_menu(MenuState* menu);
+
 /* Renders a win screen centered on the terminal showing "YOU WIN!" and
  * the player's solve time in MM:SS format. Waits for the caller to handle
  * the next keypress — this function only draws and refreshes, it does not
@@ -61,6 +85,8 @@ void render(GameState* game, Cursor* cursor);
  *
  * game: pointer to current game state (used to read start_time for elapsed calc) */
 void render_win_screen(GameState* game);
+
+int handle_menu_input(MenuState* menu, int ch);
 
 /* Handles a single keypress and updates game or cursor state accordingly.
  * Movement: arrow keys and hjkl move the cursor, wrapping at grid edges.

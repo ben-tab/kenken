@@ -3,8 +3,8 @@
 #define CAGE_COUNT 7
 
 void clear_grid(GameState* game) {
-	for (int i=0; i<SIZE; i++) {
-		for (int j=0; j<SIZE; j++) {
+	for (int i=0; i<game->size; i++) {
+		for (int j=0; j<game->size; j++) {
 			game->grid[i][j] = 0;
 		}
 	}	
@@ -15,14 +15,14 @@ void load_puzzle(GameState* game) {
 	game->start_time = time(NULL);
 	
 	// Hardcoded solution currently
-	int sol[SIZE][SIZE] = {
+	int sol[4][4] = {
 		{4, 2, 1, 3},
 		{2, 3, 4, 1},
 		{3, 1, 2, 4},
 		{1, 4, 3, 2}
 	};
-	for (int i=0; i<SIZE; i++) {
-		for (int j=0; j<SIZE; j++) {
+	for (int i=0; i<game->size; i++) {
+		for (int j=0; j<game->size; j++) {
 			game->solution[i][j] = sol[i][j];
 		}
 	}

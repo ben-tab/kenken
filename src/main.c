@@ -19,15 +19,35 @@ int main() {
 	cbreak();
 	keypad(stdscr, TRUE);
 	curs_set(0);
+
+	// Default menu state
+	MenuState menu = {
+		.section = MENU_DIFFICULTY,
+		.diff = DIFF_MEDIUM,
+		.size = 4
+	};
+
+	// Menu loop
+	int ch;
+	render_menu(&menu); // Render before input
+	while ((ch = getch()) != 'q') {
+		if (handle_menu_input(&menu, ch)) break;
+		render_menu(&menu);
+	}
+
+	// Remove menu screen
+	clear();
+	refresh();
 	
 	GameState game;
 	Cursor cursor = {0, 0};
+	game.size = menu.size;
 
 	// Load prebuilt 4x4 puzzle (change later when generating puzzles)
 	load_puzzle(&game);
 
 	// Game loop
-	int ch;
+	render(&game, &cursor);
 	while ((ch = getch()) != 'q') {
 		if (check_win(&game)) {
 			render_win_screen(&game);
