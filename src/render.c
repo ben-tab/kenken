@@ -21,7 +21,7 @@ int get_color(Operation op) {
 */
 void init_graphics() {
 	// Init color pairs
-	init_color(COLOR_MAGENTA, 500, 500, 500);
+	init_color(COLOR_MAGENTA, 700, 700, 700); // Doesn't work on my terminal, maybe on some it will idk
 	init_pair(1, COLOR_GREEN, COLOR_BLACK); // ADD
 	init_pair(2, COLOR_RED, COLOR_BLACK); // SUB
 	init_pair(3, COLOR_BLUE, COLOR_BLACK); // MUL
@@ -34,9 +34,9 @@ void init_graphics() {
 /*
 	Render board
 */
-void render_board(GameState* game, Cursor* cursor, int bh, int bw, int boy, int box) {
+void render_board(GameState* game, Cursor* cursor, int bh, int bw, int by, int bx) {
 	// Draw game box
-	WINDOW* board = newwin(bh, bw, boy, box);
+	WINDOW* board = newwin(bh, bw, by, bx);
 	werase(board);
 
 	box(board, 0, 0);
@@ -91,6 +91,28 @@ void render_board(GameState* game, Cursor* cursor, int bh, int bw, int boy, int 
 }
 
 /*
+	Render timer for game
+*/
+void render_timer(GameState* game, int board_offset_y, int board_offset_x, int board_w) {
+	int elapsed = (int)(time(NULL) - game->start_time);
+	int mins = elapsed / 60;
+	int secs = elapsed % 60;
+	
+	int timer_w = 8;
+	int timer_x = board_offset_x + (board_w/2)-(timer_w/2);
+	
+	WINDOW* timer = newwin(1, timer_w, board_offset_y-2, timer_x);
+	werase(timer);
+
+	wattron(timer, COLOR_PAIR(5));
+	mvwprintw(timer, 0, 0, "%02d:%02d", mins, secs);
+	wattroff(timer, COLOR_PAIR(5));
+
+	wrefresh(timer);
+	delwin(timer);
+}
+
+/*
 	Main render function that calls other render functions
 */
 void render(GameState* game, Cursor* cursor) {
@@ -105,8 +127,12 @@ void render(GameState* game, Cursor* cursor) {
 	int board_w = CELL_W*(game->size)+2;
 	int board_offset_y = (term_rows - board_h)/2;
 	int board_offset_x = (term_cols - board_w)/2;
+
+	if (board_offset_y < 0) board_offset_y = 0;
+	if (board_offset_x < 0) board_offset_x = 0;
 	
 	render_board(game, cursor, board_h, board_w, board_offset_y, board_offset_x);
+	render_timer(game, board_offset_y, board_offset_x, board_w);
 }
 
 /*
@@ -136,6 +162,9 @@ void render_win_screen(GameState* game) {
     refresh();
 }
 
+/*
+	Render menu screen
+*/
 int render_menu(MenuState* menu) {
 	clear();
 
@@ -211,11 +240,11 @@ int handle_menu_input(MenuState* menu, int ch) {
 		case KEY_DOWN: case 'j': menu->section = (menu->section+1) % MENU_SECTION_COUNT; break;
 		case KEY_LEFT: case 'h':
 			if (menu->section == MENU_DIFFICULTY) menu->diff = (menu->diff-1+DIFF_COUNT) % DIFF_COUNT;
-			else if (menu->section == MENU_SIZE) menu->size = (menu->size-1 < 3) ? 9 : menu->size-1;
+			else if (menu->section == MENU_SIZE) menu->size = (menu->size-1 < MIN_SIZE) ? MAX_SIZE : menu->size-1;
 			break;
 		case KEY_RIGHT: case 'l':
 			if (menu->section == MENU_DIFFICULTY) menu->diff = (menu->diff+1) % DIFF_COUNT;
-			else if (menu->section == MENU_SIZE) menu->size = (menu->size+1 > 9) ? 3 : menu->size+1;
+			else if (menu->section == MENU_SIZE) menu->size = (menu->size+1 > MAX_SIZE) ? MIN_SIZE : menu->size+1;
 			break;
 		case '\n': case KEY_ENTER:
 			if (menu->section == MENU_PLAY) return 1;
@@ -238,13 +267,20 @@ switch (ch) {
 	case KEY_RIGHT: case 'l': cursor->col = (cursor->col+1) % game->size; break;
 
 	// Num input
-	case '1': case '2': case '3': case '4':
-		game->grid[cursor->row][cursor->col] = ch - '0';
+	case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+		if (ch - '0' <= game->size) {
+			game->grid[cursor->row][cursor->col] = ch - '0';
+		}
 		break;
 
 	// Clear cell
-	case KEY_BACKSPACE: case 'd':
+	case KEY_BACKSPACE: case 'd': case '0':
 		game->grid[cursor->row][cursor->col] = 0;
+		break;
+
+	// Show cell
+	case 'c':
+		game->grid[cursor->row][cursor->col] = game->solution[cursor->row][cursor->col];
 		break;
 
 	default: break;

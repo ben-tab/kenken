@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <ncurses.h>
 #include "../include/render.h"
+#include "../include/game.h"
 #include "../include/puzzle.h"
 
 int main() {
@@ -39,30 +40,48 @@ int main() {
 	clear();
 	refresh();
 	
-	GameState game;
+	GameState* game = (GameState*)malloc(sizeof(GameState));
+	if (!game) {
+		endwin();
+		printf("Failed to allocate gamestate");
+		exit(1);
+	}
+	
 	Cursor cursor = {0, 0};
-	game.size = menu.size;
+	game->size = menu.size;
+
+	srand(time(NULL));
+	generate_puzzle(game);
 
 	// Load prebuilt 4x4 puzzle (change later when generating puzzles)
-	load_puzzle(&game);
+	// load_puzzle(&game);
 
 	// Game loop
-	render(&game, &cursor);
+	timeout(1000); // Enable timer loop
+	render(game, &cursor);
 	while ((ch = getch()) != 'q') {
-		if (check_win(&game)) {
-			render_win_screen(&game);
+		if (check_win(game)) {
+			render_win_screen(game);
+			timeout(-1); // Block timer
 			ch = getch();
 			if (ch == 'q') break;
 			if (ch == 'r') {
-				load_puzzle(&game);
+				game->size = menu.size;
+				generate_puzzle(game);
 				cursor = (Cursor){0, 0};
+				timeout(1000); // Enable timer loop
 			}
 		} else {
-			handle_input(&game, &cursor, ch);
-			render(&game, &cursor);
+			if (ch != ERR) {
+				handle_input(game, &cursor, ch);
+			}
+			render(game, &cursor);
 		}
 	}
-	
+
+	timeout(-1);
+
+	free(game);
 	endwin();
 	return 0;
 }

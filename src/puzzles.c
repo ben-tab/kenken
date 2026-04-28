@@ -2,16 +2,16 @@
 
 #define CAGE_COUNT 7
 
-void clear_grid(GameState* game) {
-	for (int i=0; i<game->size; i++) {
-		for (int j=0; j<game->size; j++) {
-			game->grid[i][j] = 0;
-		}
-	}	
-}
+// void clear_grid(GameState* game) {
+// 	for (int i=0; i<game->size; i++) {
+// 		for (int j=0; j<game->size; j++) {
+// 			game->grid[i][j] = 0;
+// 		}
+// 	}	
+// }
 
 void load_puzzle(GameState* game) {
-	clear_grid(game);
+	// clear_grid(game);
 	game->start_time = time(NULL);
 	
 	// Hardcoded solution currently

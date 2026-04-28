@@ -1,7 +1,7 @@
 #ifndef UI_H
 #define UI_H
 
-#include "game.h"
+#include "defs.h"
 
 /* Cell dimensions in terminal characters
  * CELL_W: columns per cell, includes padding for label and value display
@@ -65,6 +65,15 @@ void init_graphics();
  * box:    board window top-left column (x offset from left of terminal) */
 void render_board(GameState* game, Cursor* cursor, int bh, int bw, int boy, int box);
 
+/* Renders a timer above the board showing elapsed time since puzzle start.
+ * Positioned centered above the board using the board offset and width.
+ *
+ * game:            pointer to current game state (reads start_time)
+ * board_offset_y:  top row of the board window
+ * board_offset_x:  left column of the board window
+ * board_w:         width of the board window in columns */
+void render_timer(GameState* game, int board_offset_y, int board_offset_x, int board_w);
+
 /* Main render entry point. Calculates terminal dimensions and centering
  * offsets, then calls render_board and render_info to draw the full UI.
  * Both the board and info panel are treated as one unit when centering
@@ -75,6 +84,13 @@ void render_board(GameState* game, Cursor* cursor, int bh, int bw, int boy, int 
  * cursor: pointer to the player's current cursor position */
 void render(GameState* game, Cursor* cursor);
 
+/* Renders the main menu with difficulty, size and play sections
+ * Focused section is bolded so if you're on size the size section will be bolded
+ * Selected options are highlighted
+ * Returns 0 if everything went good
+ *
+ * menu: pointer to current menu state
+ */
 int render_menu(MenuState* menu);
 
 /* Renders a win screen centered on the terminal showing "YOU WIN!" and
@@ -86,6 +102,14 @@ int render_menu(MenuState* menu);
  * game: pointer to current game state (used to read start_time for elapsed calc) */
 void render_win_screen(GameState* game);
 
+/* Handles a single menu keypress and updates menu state.
+ * Up/down moves between sections. Left/right changes the selected value
+ * within the focused section. Enter on PLAY returns 1 to signal game start,
+ * enter on other sections advances focus to the next section.
+ *
+ * menu: pointer to current menu state (mutated on any input)
+ * ch:   keypress value returned by getch()
+ * returns 1 if PLAY was confirmed, 0 otherwise */
 int handle_menu_input(MenuState* menu, int ch);
 
 /* Handles a single keypress and updates game or cursor state accordingly.
