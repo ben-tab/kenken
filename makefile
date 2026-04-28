@@ -1,28 +1,50 @@
-# Compiler and Flags
-CC = gcc
-CFLAGS = -Wall -Iinclude  # -Iinclude adds a header directory if you have one
-LIBS = -lncurses
+# Compiler and flags
+CC      = gcc
+CFLAGS  = -Wall -Iinclude
+LIBS    = -lncurses
 
-# Target Executable Name
-TARGET = kenken
+# Target executable
+TARGET  = kenken
 
-# Source Files
-SRC = src/main.c \
-      src/render.c \
-      src/game.c \
-      src/puzzles.c
+# Source and object files
+SRC     = src/main.c \
+          src/render.c \
+          src/game.c \
+          src/puzzles.c
+OBJ     = $(SRC:.c=.o)
 
-# Object Files (This converts .c filenames to .o filenames)
-OBJ = $(SRC:.c=.o)
+# Install prefix (override with: make install PREFIX=/usr)
+PREFIX  ?= /usr/local
+BINDIR  = $(PREFIX)/bin
+MANDIR  = $(PREFIX)/share/man/man6
 
-# Default Rule: Build the executable
+# Default rule
+all: $(TARGET)
+
 $(TARGET): $(OBJ)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) $(LIBS)
 
-# Rule for compiling .c files into .o files
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Clean Rule: Remove compiled files
+# Install rule
+install: $(TARGET)
+	install -d $(BINDIR)
+	install -m 755 $(TARGET) $(BINDIR)/$(TARGET)
+	@echo "Installed to $(BINDIR)/$(TARGET)"
+
+# Uninstall rule
+uninstall:
+	rm -f $(BINDIR)/$(TARGET)
+	@echo "Uninstalled $(TARGET)"
+
+# Debug build with address sanitizer
+debug: CFLAGS += -g -fsanitize=address
+debug: LIBS   += -fsanitize=address
+debug: $(TARGET)
+
+# Clean rule
 clean:
 	rm -f $(TARGET) $(OBJ)
+
+.PHONY: all install uninstall debug clean
