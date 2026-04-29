@@ -108,11 +108,15 @@ void assign_cage_op(GameState* game, Cage* cage) {
 		int high = vals[0] > vals[1] ? vals[0] : vals[1];
 		int low = vals[0] < vals[1] ? vals[0] : vals[1];
 
-		Operation ops[] = {ADD, SUB, MUL, DIV};
-		rand_op = ops[rand() % 4]; 
+		Operation ops[] = {ADD, SUB, MUL, DIV, DIV, DIV}; // Div 3 times to weigh the odds
+		rand_op = ops[rand() % 6]; 
 
-		if (rand_op == DIV && (low == 0 || high % low != 0)) rand_op = ADD;
-	
+		// If div doesn't work fallback to other operations
+		if (rand_op == DIV && (low == 0 || high % low != 0)) {
+			Operation fallback[] = {ADD, SUB, MUL};
+			rand_op = fallback[rand() % 3];
+		}
+		
 		cage->op = rand_op;
 		
 		switch (rand_op) {

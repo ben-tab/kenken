@@ -58,15 +58,27 @@ void render_board(GameState* game, Cursor* cursor, int bh, int bw, int by, int b
 				pair = color;
 			}
 
-			//Fill all 3 rows of cell with the color
+			// Fill all 3 rows of cell with the color
 			for (int dy=0; dy<CELL_H; dy++) {
 				for (int dx=0; dx<CELL_W; dx++) {
 					mvwaddch(board, screen_y+dy, screen_x+dx, ' ' | COLOR_PAIR(pair));
 				}
 			}
 
+			// Find top-left-most cell in cage
+			int label_row = cage->coords[0][0];
+			int label_col = cage->coords[0][1];
+			for (int k=1; k<cage->size; k++) {
+				int r = cage->coords[k][0];
+				int c = cage->coords[k][1];
+				if (r < label_row || (r == label_row && c < label_col)) {
+					label_row = r;
+					label_col = c;
+				}
+			}
+
 			// Cage label in top left cell of cage
-			bool is_label = (cage->coords[0][0] == i && cage->coords[0][1] == j);
+			bool is_label = (label_row == i && label_col == j);
 			if (is_label) {
 				wattron(board, COLOR_PAIR(pair) | A_BOLD);
 				mvwprintw(board, screen_y, screen_x, "%d%c", cage->target, (char)cage->op);
@@ -173,9 +185,12 @@ int render_menu(MenuState* menu) {
 	int mid_y = term_rows / 2;
 	int mid_x = term_cols / 2;
 
-	// Title
+	// ASCII art title 
 	attron(COLOR_PAIR(3) | A_BOLD);
-	mvprintw(mid_y-10, mid_x-3, "KENKEN");
+	mvprintw(mid_y-12, mid_x-13, "  _  _____ _   _ _  _____ _   _ ");
+	mvprintw(mid_y-11, mid_x-13, " | |/ / __| \\ | | |/ / __| \\ | |");
+	mvprintw(mid_y-10, mid_x-13, " | ' <| _||  \\| | ' <| _||  \\| |");
+	mvprintw(mid_y-9,  mid_x-13, " |_|\\_\\___|_|\\__|_|\\_\\___|_|\\__|");
 	attroff(COLOR_PAIR(3) | A_BOLD);
 
 	// Difficulty
@@ -185,6 +200,7 @@ int render_menu(MenuState* menu) {
 
 	const char* diff_labels[] = {"EASY", "MEDIUM", "HARD"};
 	int diff_colors[] = {1, 4, 2}; // Color pairs for each difficulty
+	int diff_offsets[] = {0, 9, 20}; // Manual offset based on label width
 
 	for (int i=0; i<DIFF_COUNT; i++) {
 		bool is_selected = (menu->diff == i);
@@ -194,7 +210,7 @@ int render_menu(MenuState* menu) {
 		} else {
 			attron(COLOR_PAIR(5));
 		}
-		mvprintw(mid_y-6, mid_x-2+(i*10), "%s%s%s", 
+		mvprintw(mid_y-6, mid_x-3+diff_offsets[i], "%s%s%s", 
 		is_selected ? "[" : " ",
 		diff_labels[i],
 		is_selected ? "]" : " ");
@@ -203,10 +219,10 @@ int render_menu(MenuState* menu) {
 
 	// Size
 	attron(COLOR_PAIR(5) | (menu->section == MENU_SIZE ? A_BOLD : 0));
-	mvprintw(mid_y-2, mid_x-16, "SIZE:");
+	mvprintw(mid_y-2, mid_x-20, "SIZE:");
 	attroff(COLOR_PAIR(5) | A_BOLD);
 
-	for (int i=3; i<=9; i++) {
+	for (int i=MIN_SIZE; i<=MAX_SIZE; i++) {
 		bool is_selected = (menu->size == i);
 		bool is_focused = (menu->section == MENU_SIZE);
 		if (is_selected) {
@@ -214,7 +230,7 @@ int render_menu(MenuState* menu) {
 		} else {
 			attron(COLOR_PAIR(5));
         }
-		mvprintw(mid_y-2, mid_x-9+((i-3)*6), "%s%dx%d%s",
+		mvprintw(mid_y-2, mid_x-13+((i-3)*6), "%s%dx%d%s",
 		is_selected ? "[" : " ",
 		i, i,
 		is_selected ? "]" : " ");
@@ -224,7 +240,7 @@ int render_menu(MenuState* menu) {
 	// Play
 	bool play_focused = (menu->section == MENU_PLAY);
 	attron(COLOR_PAIR(1) | A_BOLD | (play_focused ? A_REVERSE : 0));
-	mvprintw(mid_y+2, mid_x-5, "[ PLAY ]");
+	mvprintw(mid_y+2, mid_x-2, "[ PLAY ]");
 	attroff(COLOR_PAIR(1) | A_BOLD | A_REVERSE);
 
 	refresh();

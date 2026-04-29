@@ -42,8 +42,8 @@ void generate_latin_square(GameState* game);
 
 /* Assigns an operation and target value to a cage based on its cells.
  * Single-cell cages always use EQL. Two-cell cages may use any operation
- * (DIV falls back to ADD if the division is not clean). Cages of 3 or more
- * cells only use ADD or MUL.
+ * (DIV falls back to other operations  if the division is not clean).
+ * Cages of 3 or more cells only use ADD or MUL.
  *
  * game: pointer to current game state (reads solution values)
  * cage: pointer to the cage to assign */
