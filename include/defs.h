@@ -40,6 +40,7 @@ typedef struct {
 	int solution[MAX_SIZE][MAX_SIZE]; // Solved grid
 	Cell cells[MAX_SIZE][MAX_SIZE]; // Cell metadata
 	Cage cages[MAX_CAGES];
+	int notes[MAX_SIZE][MAX_SIZE][MAX_SIZE]; // notes[row][col][num-1] = 1 if noted
 	int cage_count;
 	time_t start_time;
 	int size;

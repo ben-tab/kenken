@@ -49,6 +49,7 @@ int main() {
 	
 	Cursor cursor = {0, 0};
 	game->size = menu.size;
+	InputMode mode = MODE_NORMAL;
 
 	srand(time(NULL));
 	generate_puzzle(game);
@@ -58,7 +59,7 @@ int main() {
 
 	// Game loop
 	timeout(1000); // Enable timer loop
-	render(game, &cursor);
+	render(game, &cursor, &mode);
 	while ((ch = getch()) != 'q') {
 		if (check_win(game)) {
 			render_win_screen(game);
@@ -73,9 +74,9 @@ int main() {
 			}
 		} else {
 			if (ch != ERR) {
-				handle_input(game, &cursor, ch);
+				handle_input(game, &cursor, &mode, ch);
 			}
-			render(game, &cursor);
+			render(game, &cursor, &mode);
 		}
 	}
 

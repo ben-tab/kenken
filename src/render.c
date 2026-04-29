@@ -87,13 +87,24 @@ void render_board(GameState* game, Cursor* cursor, int bh, int bw, int by, int b
 
 			// Player value
 			int val = game->grid[i][j];
-			wattron(board, COLOR_PAIR(pair));
 			if (val != 0) {
+				wattron(board, COLOR_PAIR(pair) | A_BOLD);
 				mvwprintw(board, screen_y+CELL_H/2, screen_x+CELL_W/2, "%d", val);
+				wattroff(board, COLOR_PAIR(pair) | A_BOLD);
 			} else {
-				mvwprintw(board, screen_y+CELL_H/2, screen_x+CELL_W/2, " ");
+				// Draw notes in 3x2 grid in cell, up to 6 notes shown as small numbers
+				int note_positions[6][2] = {{0, 0}, {0, 2}, {0, 4}, {1, 0}, {1, 2}, {1, 4}};
+				wattron(board, COLOR_PAIR(pair));
+				for (int k=0; k<game->size && k<6; k++) {
+					if (game->notes[i][j][k]) {
+						int ny = screen_y + note_positions[k][0] + 1;
+						int nx = screen_x + note_positions[k][1] + 1;
+						mvwprintw(board, ny, nx, "%d", k+1);
+					}
+				}
+				wattroff(board, COLOR_PAIR(pair));
 			}
-			wattroff(board, COLOR_PAIR(pair));
+			
 			
 		}
 	}
@@ -127,13 +138,10 @@ void render_timer(GameState* game, int board_offset_y, int board_offset_x, int b
 /*
 	Main render function that calls other render functions
 */
-void render(GameState* game, Cursor* cursor) {
+void render(GameState* game, Cursor* cursor, InputMode* mode) {
 	// Get sizes;
 	int term_rows, term_cols;
 	getmaxyx(stdscr, term_rows, term_cols);
-	// Get rid of annoying set but not used compiler warning
-	(void)term_rows;
-	(void)term_cols;
 	
 	int board_h = CELL_H*(game->size)+2;
 	int board_w = CELL_W*(game->size)+2;
@@ -145,6 +153,12 @@ void render(GameState* game, Cursor* cursor) {
 	
 	render_board(game, cursor, board_h, board_w, board_offset_y, board_offset_x);
 	render_timer(game, board_offset_y, board_offset_x, board_w);
+
+	attron(COLOR_PAIR(*mode == MODE_NOTE ? 4 : 5));
+	mvprintw(board_offset_y+board_h+1, board_offset_x, 
+	*mode == MODE_NOTE ? "MODE: Note [n]  " : "MODE: Normal [n]");
+	attroff(COLOR_PAIR(*mode == MODE_NOTE ? 4 : 5));
+	refresh();
 }
 
 /*
@@ -274,31 +288,54 @@ int handle_menu_input(MenuState* menu, int ch) {
 /*
 	Input handling
 */
-void handle_input(GameState* game, Cursor* cursor, int ch) {
-switch (ch) {
-	// Movement
-	case KEY_UP: case 'k': cursor->row = (cursor->row-1+game->size) % game->size; break;
-	case KEY_DOWN: case 'j': cursor->row = (cursor->row+1) % game->size; break;
-	case KEY_LEFT: case 'h': cursor->col = (cursor->col-1+game->size) % game->size; break;
-	case KEY_RIGHT: case 'l': cursor->col = (cursor->col+1) % game->size; break;
+void handle_input(GameState* game, Cursor* cursor, InputMode* mode, int ch) {
+	switch (ch) {
+		// Movement
+		case KEY_UP: case 'k': cursor->row = (cursor->row-1+game->size) % game->size; break;
+		case KEY_DOWN: case 'j': cursor->row = (cursor->row+1) % game->size; break;
+		case KEY_LEFT: case 'h': cursor->col = (cursor->col-1+game->size) % game->size; break;
+		case KEY_RIGHT: case 'l': cursor->col = (cursor->col+1) % game->size; break;
 
-	// Num input
-	case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-		if (ch - '0' <= game->size) {
-			game->grid[cursor->row][cursor->col] = ch - '0';
+		// Toggle note mode
+		case 'n':
+			*mode = (*mode == MODE_NOTE) ? MODE_NORMAL : MODE_NOTE;
+			break;
+
+		// Num input
+		case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': {
+			int num = ch - '0';
+			if (num > game->size) break;
+
+			if (*mode == MODE_NOTE) {
+				int* note = &game->notes[cursor->row][cursor->col][num-1];
+				*note = !*note;
+			} else {
+				game->grid[cursor->row][cursor->col] = num;
+
+				// Clear notes when value entered
+				for (int i=0; i<game->size; i++) {
+					game->notes[cursor->row][cursor->col][i] = 0;
+				}
+			}
+			break;
 		}
-		break;
 
-	// Clear cell
-	case KEY_BACKSPACE: case 'd': case '0':
-		game->grid[cursor->row][cursor->col] = 0;
-		break;
+		// Clear cell
+		case KEY_BACKSPACE: case 'd': case '0':
+			game->grid[cursor->row][cursor->col] = 0;
+			for (int i=0; i<game->size; i++) {
+				game->notes[cursor->row][cursor->col][i] = 0;
+			}
+			break;
 
-	// Show cell
-	case 'c':
-		game->grid[cursor->row][cursor->col] = game->solution[cursor->row][cursor->col];
-		break;
+		// Show cell
+		case 'c':
+			game->grid[cursor->row][cursor->col] = game->solution[cursor->row][cursor->col];
+			for (int i=0; i<game->size; i++) {
+				game->notes[cursor->row][cursor->col][i] = 0;
+			}
+			break;
 
-	default: break;
-}
+		default: break;
+	}
 }

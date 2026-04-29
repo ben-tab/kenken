@@ -32,6 +32,11 @@ typedef struct {
 	int size;
 } MenuState;
 
+typedef enum {
+	MODE_NORMAL, // Regular input mode
+	MODE_NOTE // Write notes in cells
+} InputMode;
+
 // Track players current selected cell on the grid (0, 0) is top left cell in grid
 typedef struct {
 	int row;
@@ -81,8 +86,9 @@ void render_timer(GameState* game, int board_offset_y, int board_offset_x, int b
  * Should be called once per iteration of the main game loop.
  *
  * game:   pointer to current game state
- * cursor: pointer to the player's current cursor position */
-void render(GameState* game, Cursor* cursor);
+ * cursor: pointer to the player's current cursor position
+ * mode:   pointer to the player's current toggled mode */
+void render(GameState* game, Cursor* cursor, InputMode* mode);
 
 /* Renders the main menu with difficulty, size and play sections
  * Focused section is bolded so if you're on size the size section will be bolded
@@ -114,13 +120,15 @@ int handle_menu_input(MenuState* menu, int ch);
 
 /* Handles a single keypress and updates game or cursor state accordingly.
  * Movement: arrow keys and hjkl move the cursor, wrapping at grid edges.
- * Input:    '1'-'4' sets the value of the cell under the cursor.
- * Clear:    backspace or 'd' sets the cell under the cursor to 0 (empty).
+ * Input:    '1'-'n' sets the value of the cell under the cursor.
+ * Clear:    backspace, 'd', or '0' sets the cell under the cursor to 0 (empty).
+ * Check:    'c' to check cell and input correct value
  * Does NOT check for win conditions — that is the caller's responsibility.
  *
  * game:   pointer to current game state (grid is mutated on number input)
  * cursor: pointer to cursor (mutated on movement keys)
+ * mode:   pointer to current mode (normal or note)
  * ch:     the keypress value returned by getch() */
-void handle_input(GameState* game, Cursor* cursor, int ch);
+void handle_input(GameState* game, Cursor* cursor, InputMode* mode, int ch);
 
 #endif
