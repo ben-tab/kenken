@@ -3,7 +3,6 @@
 #include <ncurses.h>
 #include "../include/render.h"
 #include "../include/game.h"
-#include "../include/puzzle.h"
 
 int main() {
 	initscr();

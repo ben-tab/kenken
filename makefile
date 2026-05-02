@@ -9,8 +9,7 @@ TARGET  = kenken
 # Source and object files
 SRC     = src/main.c \
           src/render.c \
-          src/game.c \
-          src/puzzles.c
+          src/game.c
 OBJ     = $(SRC:.c=.o)
 
 # Install prefix (override with: make install PREFIX=/usr)
