@@ -32,6 +32,57 @@ void init_graphics() {
 }
 
 /*
+	Helper function to draw borders at the edge of each cell
+*/
+void draw_cage_border(WINDOW* board, GameState* game) {
+	attron(A_BOLD);
+	for (int i=0; i<game->size; i++) {
+		for (int j=0; j<game->size; j++) {
+			Cage* cage = game->cells[i][j].cage;
+			int sy = i * CELL_H + 1;
+			int sx = j * CELL_W + 1;
+
+			// Right border
+			if (j+1 < game->size) {
+				Cage* right = game->cells[i][j+1].cage;
+				chtype ch = (cage->cage_id != right->cage_id) ? ACS_VLINE : ' ';
+				for (int dy=0; dy<CELL_H; dy++) {
+					mvwaddch(board, sy+dy, sx+CELL_W-1, ch);
+				}
+			}
+
+			// Bottom border
+			if (i+1 < game->size) {
+				Cage* bottom = game->cells[i+1][j].cage;
+				chtype ch = (cage->cage_id != bottom->cage_id) ? ACS_HLINE : ' ';
+				for (int dx=0; dx<CELL_W; dx++) {
+					mvwaddch(board, sy+CELL_H-1, sx+dx, ch);
+				}
+			}
+
+			// Corner intersections
+			if (i+1 < game->size && j+1 < game->size) {
+				Cage* right = game->cells[i][j+1].cage;
+				Cage* bottom = game->cells[i+1][j].cage;
+				Cage* diag = game->cells[i+1][j+1].cage;
+
+				bool hline = (cage->cage_id != bottom->cage_id || right->cage_id != diag->cage_id);
+				bool vline = (cage->cage_id != right->cage_id || bottom->cage_id != diag->cage_id);
+
+				chtype corner;
+				if (hline && vline) corner = ACS_PLUS;
+				else if (hline) corner = ACS_HLINE;
+				else if (vline) corner = ACS_VLINE;
+				else corner = ' ';
+
+				mvwaddch(board, sy+CELL_H-1, sx+CELL_W-1, corner);
+			}
+		}
+	}
+	attroff(A_BOLD);
+}
+
+/*
 	Render board
 */
 void render_board(GameState* game, Cursor* cursor, int bh, int bw, int by, int bx) {
@@ -58,7 +109,7 @@ void render_board(GameState* game, Cursor* cursor, int bh, int bw, int by, int b
 				pair = color;
 			}
 
-			// Fill all 3 rows of cell with the color
+			// Fill all rows of cell with the color
 			for (int dy=0; dy<CELL_H; dy++) {
 				for (int dx=0; dx<CELL_W; dx++) {
 					mvwaddch(board, screen_y+dy, screen_x+dx, ' ' | COLOR_PAIR(pair));
@@ -89,13 +140,13 @@ void render_board(GameState* game, Cursor* cursor, int bh, int bw, int by, int b
 			int val = game->grid[i][j];
 			if (val != 0) {
 				wattron(board, COLOR_PAIR(pair) | A_BOLD);
-				mvwprintw(board, screen_y+CELL_H/2, screen_x+CELL_W/2, "%d", val);
+				mvwprintw(board, screen_y+CELL_H/2-1, screen_x+CELL_W/2-1, "%d", val);
 				wattroff(board, COLOR_PAIR(pair) | A_BOLD);
 			} else {
-				// Draw notes in 3x2 grid in cell, up to 6 notes shown as small numbers
-				int note_positions[6][2] = {{0, 0}, {0, 2}, {0, 4}, {1, 0}, {1, 2}, {1, 4}};
+				// Draw notes in 3x3 grid in cell, up to 9 notes shown as small numbers
+				int note_positions[MAX_SIZE][2] = {{0, 0}, {0, 2}, {0, 4}, {1, 0}, {1, 2}, {1, 4}, {2, 0}, {2, 2}, {2, 4}};
 				wattron(board, COLOR_PAIR(pair));
-				for (int k=0; k<game->size && k<6; k++) {
+				for (int k=0; k<game->size && k<MAX_SIZE; k++) {
 					if (game->notes[i][j][k]) {
 						int ny = screen_y + note_positions[k][0] + 1;
 						int nx = screen_x + note_positions[k][1] + 1;
@@ -108,6 +159,9 @@ void render_board(GameState* game, Cursor* cursor, int bh, int bw, int by, int b
 			
 		}
 	}
+
+	// Draw cage borders
+	draw_cage_border(board, game);
 
 	wrefresh(board);
 	delwin(board);
@@ -154,10 +208,10 @@ void render(GameState* game, Cursor* cursor, InputMode* mode) {
 	render_board(game, cursor, board_h, board_w, board_offset_y, board_offset_x);
 	render_timer(game, board_offset_y, board_offset_x, board_w);
 
-	attron(COLOR_PAIR(*mode == MODE_NOTE ? 4 : 5));
+	attron(COLOR_PAIR(4));
 	mvprintw(board_offset_y+board_h+1, board_offset_x, 
 	*mode == MODE_NOTE ? "MODE: Note [n]  " : "MODE: Normal [n]");
-	attroff(COLOR_PAIR(*mode == MODE_NOTE ? 4 : 5));
+	attroff(COLOR_PAIR(4));
 	refresh();
 }
 

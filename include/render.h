@@ -4,10 +4,10 @@
 #include "defs.h"
 
 /* Cell dimensions in terminal characters
- * CELL_W: columns per cell, includes padding for label and value display
- * CELL_H: rows per cell, top row is cage label, middle is value and bottom is padding */
-#define CELL_W 7
-#define CELL_H 3
+ * CELL_W: columns per cell, includes padding for label and value display as well as border
+ * CELL_H: rows per cell, top row is cage label, middle is value and bottom is padding + border */
+#define CELL_W 11
+#define CELL_H 5
 
 // Sections in menu
 typedef enum {
