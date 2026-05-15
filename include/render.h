@@ -4,43 +4,40 @@
 #include "defs.h"
 
 /* Cell dimensions in terminal characters
- * CELL_W: columns per cell, includes padding for label and value display as well as border
- * CELL_H: rows per cell, top row is cage label, middle is value and bottom is padding + border */
+ * CELL_W: columns per cell, includes padding for label and value display as
+ * well as border CELL_H: rows per cell, top row is cage label, middle is value
+ * and bottom is padding + border */
 #define CELL_W 11
 #define CELL_H 5
 
 // Sections in menu
 typedef enum {
-    MENU_DIFFICULTY,
-    MENU_SIZE,
-    MENU_PLAY,
-    MENU_SECTION_COUNT
+  MENU_DIFFICULTY,
+  MENU_SIZE,
+  MENU_PLAY,
+  MENU_SECTION_COUNT
 } MenuSection;
 
 // Difficulty
-typedef enum {
-    DIFF_EASY,
-    DIFF_MEDIUM,
-    DIFF_HARD,
-    DIFF_COUNT
-} Difficulty;
+typedef enum { DIFF_EASY, DIFF_MEDIUM, DIFF_HARD, DIFF_COUNT } Difficulty;
 
 // Track current state of menu
 typedef struct {
-	MenuSection section;  // Section that is focused
-	Difficulty diff; // Selected difficulty
-	int size;
+  MenuSection section; // Section that is focused
+  Difficulty diff;     // Selected difficulty
+  int size;
 } MenuState;
 
 typedef enum {
-	MODE_NORMAL, // Regular input mode
-	MODE_NOTE // Write notes in cells
+  MODE_NORMAL, // Regular input mode
+  MODE_NOTE    // Write notes in cells
 } InputMode;
 
-// Track players current selected cell on the grid (0, 0) is top left cell in grid
+// Track players current selected cell on the grid (0, 0) is top left cell in
+// grid
 typedef struct {
-	int row;
-	int col;
+  int row;
+  int col;
 } Cursor;
 
 /* Initializes ncurses color pairs used throughout the UI.
@@ -68,7 +65,8 @@ void init_graphics();
  * bw:     total board window width in terminal columns  (CELL_W * SIZE + 2)
  * boy:    board window top-left row    (y offset from top of terminal)
  * box:    board window top-left column (x offset from left of terminal) */
-void render_board(GameState* game, Cursor* cursor, int bh, int bw, int boy, int box);
+void render_board(GameState *game, Cursor *cursor, int bh, int bw, int boy,
+                  int box);
 
 /* Renders a timer above the board showing elapsed time since puzzle start.
  * Positioned centered above the board using the board offset and width.
@@ -77,7 +75,8 @@ void render_board(GameState* game, Cursor* cursor, int bh, int bw, int boy, int 
  * board_offset_y:  top row of the board window
  * board_offset_x:  left column of the board window
  * board_w:         width of the board window in columns */
-void render_timer(GameState* game, int board_offset_y, int board_offset_x, int board_w);
+void render_timer(GameState *game, int board_offset_y, int board_offset_x,
+                  int board_w);
 
 /* Main render entry point. Calculates terminal dimensions and centering
  * offsets, then calls render_board and render_info to draw the full UI.
@@ -88,16 +87,15 @@ void render_timer(GameState* game, int board_offset_y, int board_offset_x, int b
  * game:   pointer to current game state
  * cursor: pointer to the player's current cursor position
  * mode:   pointer to the player's current toggled mode */
-void render(GameState* game, Cursor* cursor, InputMode* mode);
+void render(GameState *game, Cursor *cursor, InputMode *mode);
 
 /* Renders the main menu with difficulty, size and play sections
- * Focused section is bolded so if you're on size the size section will be bolded
- * Selected options are highlighted
- * Returns 0 if everything went good
+ * Focused section is bolded so if you're on size the size section will be
+ * bolded Selected options are highlighted Returns 0 if everything went good
  *
  * menu: pointer to current menu state
  */
-int render_menu(MenuState* menu);
+int render_menu(MenuState *menu);
 
 /* Renders a win screen centered on the terminal showing "YOU WIN!" and
  * the player's solve time in MM:SS format. Waits for the caller to handle
@@ -105,8 +103,17 @@ int render_menu(MenuState* menu);
  * call getch(). The caller (main loop) is responsible for handling
  * 'r' (replay) and 'q' (quit) after this is shown.
  *
- * game: pointer to current game state (used to read start_time for elapsed calc) */
-void render_win_screen(GameState* game);
+ * game: pointer to current game state (used to read start_time for elapsed
+ * calc) */
+void render_win_screen(GameState *game);
+
+/* Clears all notes across board by setting them all to 0,
+ * used when rendering new board
+ *
+ * game: pointer to the current game state (in order to iterate
+ * through game->size)
+ */
+void clear_notes(GameState *game);
 
 /* Handles a single menu keypress and updates menu state.
  * Up/down moves between sections. Left/right changes the selected value
@@ -116,7 +123,7 @@ void render_win_screen(GameState* game);
  * menu: pointer to current menu state (mutated on any input)
  * ch:   keypress value returned by getch()
  * returns 1 if PLAY was confirmed, 0 otherwise */
-int handle_menu_input(MenuState* menu, int ch);
+int handle_menu_input(MenuState *menu, int ch);
 
 /* Handles a single keypress and updates game or cursor state accordingly.
  * Movement: arrow keys and hjkl move the cursor, wrapping at grid edges.
@@ -129,6 +136,6 @@ int handle_menu_input(MenuState* menu, int ch);
  * cursor: pointer to cursor (mutated on movement keys)
  * mode:   pointer to current mode (normal or note)
  * ch:     the keypress value returned by getch() */
-void handle_input(GameState* game, Cursor* cursor, InputMode* mode, int ch);
+void handle_input(GameState *game, Cursor *cursor, InputMode *mode, int ch);
 
 #endif

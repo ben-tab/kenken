@@ -44,7 +44,7 @@ brew install ncurses
 ## Building and Installing
 
 ```bash
-git clone https://github.com/you/kenken
+git clone https://github.com/ben-tab/kenken
 cd kenken
 make
 sudo make install
